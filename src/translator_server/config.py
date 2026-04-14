@@ -42,7 +42,7 @@ class Settings:
             segment_max_chars=int(os.getenv("SEGMENT_MAX_CHARS", "400")),
             max_length=int(os.getenv("MAX_LENGTH", "512")),
             max_new_tokens=int(os.getenv("MAX_NEW_TOKENS", "512")),
-            device=os.getenv("TRANSLATION_DEVICE"),
+            device=os.getenv("TRANSLATION_DEVICE", "cpu"),
             num_beams=int(os.getenv("NUM_BEAMS", "1")),
             basic_auth_username=os.getenv("BASIC_AUTH_USERNAME", "admin"),
             basic_auth_password=os.getenv("BASIC_AUTH_PASSWORD", "Admin@123"),

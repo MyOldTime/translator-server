@@ -13,4 +13,4 @@ services:
       DEFAULT_TARGET_LANG: zh
       BASIC_AUTH_USERNAME: admin
       BASIC_AUTH_PASSWORD: Admin@123
-    restart: unless-stopped
+    restart: always

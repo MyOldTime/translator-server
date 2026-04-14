@@ -18,7 +18,7 @@ set "UV_BIN=%UV_INSTALL_DIR%\uv.exe"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "PYTHONWARNINGS=ignore:pkg_resources is deprecated as an API:UserWarning"
-set "PYTHON_VERSION=3.12.12"
+set "PYTHON_VERSION=3.12.13"
 
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
@@ -33,6 +33,12 @@ pushd "%ROOT_DIR%"
 if %errorlevel% neq 0 (
     popd
     echo uv sync failed.
+    exit /b 1
+)
+"%UV_BIN%" pip install --python "%ROOT_DIR%\.venv\Scripts\python.exe" -r "%ROOT_DIR%\requirements.cpu.txt"
+if %errorlevel% neq 0 (
+    popd
+    echo CPU torch dependency install failed.
     exit /b 1
 )
 popd
