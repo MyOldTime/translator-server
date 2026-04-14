@@ -1,26 +1,94 @@
 # translator-server
 
-基于 `fastText` 语种识别模型 `lid.176.bin` 和本地 `M2M100` 模型 `m2m100_418M` 构建的 FastAPI 翻译服务，提供统一的 HTTP 接口用于文本翻译。
+一个基于 FastAPI 的本地翻译服务，使用 `fastText` 进行语种识别，使用本地 `M2M100` 模型完成文本翻译。
 
-## 功能概览
+适合下面这类场景：
 
-- 自动识别源语言，也支持手动指定源语言
-- 使用本地模型目录运行，不依赖在线拉取模型
-- 基于 `uv` 管理依赖与运行环境
-- 提供健康检查接口和单一翻译接口
-- 内置 Basic Auth 认证
-- 支持 Docker 镜像构建与离线部署
+- 需要统一的 HTTP 翻译接口
+- 希望完全使用本地模型，不依赖在线推理
+- 需要在内网、离线环境或受控环境中部署
 
-## 技术栈
+## Highlights
 
-- Python `3.12.13`
-- FastAPI
-- fastText
-- Transformers
-- PyTorch (CPU 默认，CUDA 可选)
-- uv
+- Auto-detect 源语言，也支持手动指定 `source_lang`
+- 本地模型推理，无需运行时下载模型
+- 基于 `uv` 管理 Python 环境与依赖
+- 内置 Basic Auth
+- 支持 Docker 构建和离线分发
 
-## 目录结构
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Configuration](#configuration)
+- [API](#api)
+- [Docker](#docker)
+- [FAQ](#faq)
+
+## Quick Start
+
+### 1. Prepare models
+
+确保本地已有以下模型文件：
+
+```text
+models/
+├─ lid.176.bin
+└─ m2m100_418M/
+```
+
+如果仓库使用了子模块，建议首次克隆时直接拉取：
+
+```bash
+git clone --recurse-submodules <your-repo-url>
+cd translator-server
+git lfs install
+git submodule update --init --recursive
+```
+
+### 2. Install dependencies
+
+```bash
+uv python pin 3.12.13
+uv sync
+uv pip install -r requirements.cpu.txt
+```
+
+### 3. Run the service
+
+```bash
+uv run translator-server
+```
+
+默认监听：
+
+- Host: `0.0.0.0`
+- Port: `8191`
+
+Windows 开发环境也可以直接运行：
+
+```bat
+run_service.bat
+```
+
+### 4. Test the API
+
+健康检查：
+
+```bash
+curl -u admin:Admin@123 http://127.0.0.1:8191/healthz
+```
+
+翻译请求：
+
+```bash
+curl -u admin:Admin@123 \
+  -H "Content-Type: application/json" \
+  -X POST http://127.0.0.1:8191/api/v1/translate \
+  -d "{\"text\":\"Hello world\",\"target_lang\":\"zh\"}"
+```
+
+## Project Structure
 
 ```text
 .
@@ -30,6 +98,7 @@
 ├─ src/translator_server/
 │  ├─ app.py
 │  ├─ config.py
+│  ├─ exceptions.py
 │  ├─ main.py
 │  ├─ schemas.py
 │  ├─ security.py
@@ -37,82 +106,26 @@
 ├─ Dockerfile
 ├─ docker-compose.yml
 ├─ pyproject.toml
+├─ requirements.cpu.txt
+├─ requirements.cuda.txt
 └─ README.md
 ```
 
-## 环境要求
+## Configuration
+
+### Runtime requirements
 
 - Python `3.12.13`
-- 已安装 `uv`
-- 已安装 `Git` 和 `Git LFS`
-- 本地已准备模型文件：
-  - `models/lid.176.bin`
-  - `models/m2m100_418M/`
+- `uv`
+- `Git`
+- `Git LFS`
 
-## 获取项目
+### Environment variables
 
-首次克隆时请一并拉取子模块：
-
-```bash
-git clone --recurse-submodules <your-repo-url>
-```
-
-如果仓库已存在，可补拉子模块：
-
-```bash
-git submodule update --init --recursive
-```
-
-如果尚未初始化 Git LFS，请先执行：
-
-```bash
-git lfs install
-```
-
-单独更新翻译模型子模块时可执行：
-
-```bash
-git submodule update --remote models/m2m100_418M
-```
-
-## 本地开发
-
-安装依赖：
-
-```bash
-uv python pin 3.12.13
-uv sync
-uv pip install -r requirements.cpu.txt
-```
-
-启动服务：
-
-```bash
-uv run translator-server
-```
-
-也可以直接使用 `uvicorn` 启动：
-
-```bash
-uv run uvicorn translator_server.app:create_app --factory --host 0.0.0.0 --port 8191
-```
-
-Windows 环境可直接运行：
-
-```bat
-run_service.bat
-```
-
-服务默认监听 `8191` 端口。
-
-## 配置说明
-
-服务支持通过环境变量覆盖默认配置：
-
-| 变量名 | 默认值 | 说明 |
+| Variable | Default | Description |
 | --- | --- | --- |
 | `APP_NAME` | `translator-server` | 应用名称 |
-| `APP_ENV` | `dev` | 运行环境标识 |
+| `APP_ENV` | `dev` | 运行环境 |
 | `APP_HOST` | `0.0.0.0` | 监听地址 |
 | `APP_PORT` | `8191` | 监听端口 |
 | `LID_MODEL_PATH` | `models/lid.176.bin` | fastText 语种识别模型路径 |
@@ -120,69 +133,34 @@ run_service.bat
 | `DEFAULT_TARGET_LANG` | `zh` | 默认目标语言 |
 | `MAX_BATCH_SIZE` | `8` | 批处理大小 |
 | `MAX_INPUT_CHARS` | `20000` | 单次请求最大字符数 |
-| `SEGMENT_MAX_CHARS` | `400` | 分段翻译时每段最大字符数 |
+| `SEGMENT_MAX_CHARS` | `400` | 单段最大字符数 |
 | `MAX_LENGTH` | `512` | 生成最大长度 |
 | `MAX_NEW_TOKENS` | `512` | 最大新增 token 数 |
-| `TRANSLATION_DEVICE` | `cpu` | 推理设备，如 `cpu` 或 `cuda` |
+| `TRANSLATION_DEVICE` | `cpu` | 推理设备，通常为 `cpu` 或 `cuda` |
 | `NUM_BEAMS` | `1` | Beam search 参数 |
 | `BASIC_AUTH_USERNAME` | `admin` | Basic Auth 用户名 |
 | `BASIC_AUTH_PASSWORD` | `Admin@123` | Basic Auth 密码 |
 
-> 生产环境请务必覆盖默认账号密码。
-
-## Docker 部署
-
-推荐在 Linux 环境中使用 Docker 部署。镜像构建时会：
-
-- builder/runtime 都基于官方 `python:3.12.13-slim-bookworm`
-- 在 builder 阶段安装 `uv`
-- 通过 `uv sync --python /usr/local/bin/python --frozen --no-dev` 安装基础依赖，并额外安装 CPU 版 PyTorch
-- 将本地 `models/` 目录复制到镜像中
-
-构建镜像：
+生产环境建议至少覆盖以下变量：
 
 ```bash
-docker build -t translator-server:latest .
+APP_ENV=prod
+BASIC_AUTH_USERNAME=your-user
+BASIC_AUTH_PASSWORD=your-password
 ```
 
-运行容器：
-
-```bash
-docker run -d \
-  --name translator-server \
-  --restart always \
-  -p 8191:8191 \
-  translator-server:latest
-```
-
-使用 Compose：
-
-```bash
-docker compose up -d --build
-```
-
-`docker-compose.yml` 默认配置了 `restart: always`，适合在宿主机或 Docker 服务重启后自动拉起服务。
-
-离线部署时可先导出镜像：
-
-```bash
-docker save -o translator-server.tar translator-server:latest
-```
-
-在目标机器导入镜像：
-
-```bash
-docker load -i translator-server.tar
-```
-
-## API 说明
+## API
 
 所有接口均启用 Basic Auth。
 
-- 默认用户名：`admin`
-- 默认密码：`Admin@123`
+默认凭据：
 
-### 健康检查
+- Username: `admin`
+- Password: `Admin@123`
+
+### `GET /healthz`
+
+请求：
 
 ```http
 GET /healthz
@@ -199,7 +177,9 @@ Authorization: Basic <base64(username:password)>
 }
 ```
 
-### 文本翻译
+### `POST /api/v1/translate`
+
+请求：
 
 ```http
 POST /api/v1/translate
@@ -207,7 +187,7 @@ Content-Type: application/json
 Authorization: Basic <base64(username:password)>
 ```
 
-请求示例：
+请求体示例：
 
 ```json
 {
@@ -216,7 +196,7 @@ Authorization: Basic <base64(username:password)>
 }
 ```
 
-如果需要手动指定源语言：
+手动指定源语言：
 
 ```json
 {
@@ -239,48 +219,89 @@ Authorization: Basic <base64(username:password)>
 }
 ```
 
-## 常见问题
+## Docker
 
-### 1. 启动时报模型不存在
+当前 Docker 部署使用多阶段构建：
 
-请确认以下路径存在且内容完整：
+- Builder 阶段安装 `uv` 和项目依赖
+- Runtime 阶段仅保留运行服务所需内容
+- 镜像内包含本地 `models/` 目录
 
-- `models/lid.176.bin`
-- `models/m2m100_418M/`
+### Build
 
-### 2. Docker 镜像体积较大
+```bash
+docker build -t translator-server:latest .
+```
 
-这是因为镜像中包含本地翻译模型和 PyTorch 运行时。当前 Dockerfile 已做了这些优化：
+### Run
 
-- 使用多阶段构建
-- 移除构建缓存
-- 排除 `models/` 目录中 Python 推理不需要的 `*.ot`、`*.md`、`*.zip`
+```bash
+docker run -d \
+  --name translator-server \
+  --restart always \
+  -p 8191:8191 \
+  translator-server:latest
+```
 
-如果镜像仍然偏大，通常最大的来源仍然是模型文件本身。
+### Compose
 
-### 3. 默认为什么不用 CUDA
+```bash
+docker compose up -d --build
+```
 
-当前项目默认固定使用 `cpu`，不会因为机器上存在 CUDA 就自动切换到 GPU。
+### Offline delivery
 
-默认 CPU 依赖安装方式：
+导出镜像：
+
+```bash
+docker save -o translator-server.tar translator-server:latest
+```
+
+导入镜像：
+
+```bash
+docker load -i translator-server.tar
+```
+
+## GPU Support
+
+项目默认安装 CPU 依赖：
 
 ```bash
 uv pip install -r requirements.cpu.txt
 ```
 
-如果你需要启用 CUDA：
+如果需要启用 CUDA：
 
-1. 将环境变量 `TRANSLATION_DEVICE` 设置为 `cuda`
-2. 额外按需安装 CUDA 版本的 PyTorch 依赖，可参考根目录的 `requirements.cuda.txt`
+1. 安装 CUDA 对应版本的 PyTorch 依赖
+2. 将 `TRANSLATION_DEVICE` 设置为 `cuda`
 
-例如：
+示例：
 
 ```bash
 uv pip install -r requirements.cuda.txt
 ```
 
-是否能真正启用，还取决于宿主机驱动、CUDA 运行时和容器/系统环境是否匹配。
+是否能真正启用 GPU，还取决于宿主机驱动、CUDA 运行时以及 Python/PyTorch 版本是否匹配。
 
-### 4. 健康检查为什么也需要认证
+## FAQ
 
-当前实现中，`/healthz` 同样启用了 Basic Auth，用于避免未授权探测。
+### 模型文件不存在怎么办？
+
+确认下面两个路径真实存在：
+
+- `models/lid.176.bin`
+- `models/m2m100_418M/`
+
+### 为什么 `/healthz` 也需要认证？
+
+当前实现中，健康检查接口同样受 Basic Auth 保护，用于避免未授权探测。
+
+### 为什么镜像体积比较大？
+
+主要原因不是应用代码，而是：
+
+- 本地翻译模型本身较大
+- PyTorch 运行时体积较大
+
+当前 Dockerfile 已经通过多阶段构建尽量压缩非运行时内容。
