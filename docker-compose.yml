@@ -1,0 +1,16 @@
+services:
+  translator-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: translator-server:latest
+    container_name: translator-server
+    ports:
+      - "8191:8191"
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8191
+      DEFAULT_TARGET_LANG: zh
+      BASIC_AUTH_USERNAME: admin
+      BASIC_AUTH_PASSWORD: Admin@123
+    restart: unless-stopped

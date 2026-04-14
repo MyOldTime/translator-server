@@ -1,0 +1,3 @@
+[submodule "models/m2m100_418M"]
+	path = models/m2m100_418M
+	url = https://huggingface.co/facebook/m2m100_418M
