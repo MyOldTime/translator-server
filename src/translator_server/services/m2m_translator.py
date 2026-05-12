@@ -55,7 +55,7 @@ class M2MTranslator:
         self.max_batch_size = max_batch_size
         self.segment_max_chars = segment_max_chars
         self.num_beams = num_beams
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = self._resolve_device(device)
         self._lock = threading.RLock()
 
         self.tokenizer = M2M100Tokenizer.from_pretrained(str(model_path), local_files_only=True)
@@ -65,6 +65,15 @@ class M2MTranslator:
         ).to(self.device)
         self.model.eval()
         self.model.generation_config.max_length = None
+
+    @staticmethod
+    def _resolve_device(device: str | None) -> str:
+        normalized = (device or "auto").strip().lower()
+        if normalized in {"", "auto"}:
+            return "cuda" if torch.cuda.is_available() else "cpu"
+        if normalized.startswith("cuda") and not torch.cuda.is_available():
+            return "cpu"
+        return normalized
 
     @property
     def model_name(self) -> str:

@@ -16,6 +16,7 @@ class TranslationResult:
     source_lang: str
     target_lang: str
     model_name: str
+    device: str
     took_ms: int
 
 
@@ -61,6 +62,7 @@ class TranslationService:
             source_lang=normalized_source,
             target_lang=normalized_target,
             model_name=self.translator.model_name,
+            device=self.translator.device,
             took_ms=took_ms,
         )
 

@@ -136,7 +136,7 @@ curl -u admin:Admin@123 \
 | `SEGMENT_MAX_CHARS` | `400` | 单段最大字符数 |
 | `MAX_LENGTH` | `512` | 生成最大长度 |
 | `MAX_NEW_TOKENS` | `512` | 最大新增 token 数 |
-| `TRANSLATION_DEVICE` | `cpu` | 推理设备，通常为 `cpu` 或 `cuda` |
+| `TRANSLATION_DEVICE` | `auto` | 推理设备，`auto` 会优先使用可用 CUDA，否则回退 CPU；也可显式设置为 `cpu` 或 `cuda` |
 | `NUM_BEAMS` | `1` | Beam search 参数 |
 | `BASIC_AUTH_USERNAME` | `admin` | Basic Auth 用户名 |
 | `BASIC_AUTH_PASSWORD` | `Admin@123` | Basic Auth 密码 |
@@ -215,6 +215,7 @@ Authorization: Basic <base64(username:password)>
   "source_lang": "en",
   "target_lang": "zh",
   "model_name": "m2m100_418M",
+  "device": "cuda",
   "took_ms": 218
 }
 ```
@@ -265,21 +266,29 @@ docker load -i translator-server.tar
 
 ## GPU Support
 
-项目默认安装 CPU 依赖：
+项目保留 CPU 与 CUDA 两个 PyTorch 安装入口：
 
 ```bash
 uv pip install -r requirements.cpu.txt
 ```
 
-如果需要启用 CUDA：
-
-1. 安装 CUDA 对应版本的 PyTorch 依赖
-2. 将 `TRANSLATION_DEVICE` 设置为 `cuda`
-
-示例：
+默认启动脚本和 Dockerfile 安装 CUDA 12.8 版 PyTorch：
 
 ```bash
 uv pip install -r requirements.cuda.txt
+```
+
+CUDA 版 PyTorch 在没有可用 CUDA 设备时仍可走 CPU；服务默认使用 `TRANSLATION_DEVICE=auto` 自动选择：
+
+- `torch.cuda.is_available()` 为 `true` 时使用 `cuda`
+- 否则使用 `cpu`
+
+如需强制使用某个设备：
+
+```bash
+TRANSLATION_DEVICE=cpu
+# 或
+TRANSLATION_DEVICE=cuda
 ```
 
 是否能真正启用 GPU，还取决于宿主机驱动、CUDA 运行时以及 Python/PyTorch 版本是否匹配。

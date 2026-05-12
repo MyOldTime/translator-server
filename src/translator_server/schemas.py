@@ -30,6 +30,7 @@ class TranslateResponse(BaseModel):
     source_lang: str
     target_lang: str
     model_name: str
+    device: str
     took_ms: int
 
 

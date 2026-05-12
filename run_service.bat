@@ -35,10 +35,10 @@ if %errorlevel% neq 0 (
     echo uv sync failed.
     exit /b 1
 )
-"%UV_BIN%" pip install --python "%ROOT_DIR%\.venv\Scripts\python.exe" -r "%ROOT_DIR%\requirements.cpu.txt"
+"%UV_BIN%" pip install --python "%ROOT_DIR%\.venv\Scripts\python.exe" -r "%ROOT_DIR%\requirements.cuda.txt"
 if %errorlevel% neq 0 (
     popd
-    echo CPU torch dependency install failed.
+    echo CUDA torch dependency install failed.
     exit /b 1
 )
 popd

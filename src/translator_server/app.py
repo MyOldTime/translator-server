@@ -67,6 +67,7 @@ def create_app() -> FastAPI:
             source_lang=result.source_lang,
             target_lang=result.target_lang,
             model_name=result.model_name,
+            device=result.device,
             took_ms=result.took_ms,
         )
 

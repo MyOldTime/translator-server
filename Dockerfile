@@ -28,12 +28,12 @@ ENV PATH="/root/.local/bin:${PATH}"
 # 先复制依赖清单和源码，便于利用 Docker 层缓存
 COPY pyproject.toml uv.lock README.md .python-version ./
 COPY src ./src
-COPY requirements.cpu.txt ./requirements.cpu.txt
+COPY requirements.cuda.txt ./requirements.cuda.txt
 
-# 安装项目基础依赖，并补装 CPU 版 PyTorch
+# 安装项目基础依赖，并补装 CUDA 12.8 版 PyTorch；无可用 CUDA 时运行时会自动回退 CPU
 # 最后清理缓存，减少中间层体积
 RUN uv sync --python /usr/local/bin/python --frozen --no-dev \
-    && uv pip install --python /app/.venv/bin/python -r requirements.cpu.txt \
+    && uv pip install --python /app/.venv/bin/python -r requirements.cuda.txt \
     && rm -rf /root/.cache /tmp/*
 
 # 第二阶段：运行时镜像，只保留服务运行需要的内容

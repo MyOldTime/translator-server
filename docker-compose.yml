@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: translator-server:latest
+    image: translator-server-cuda:latest
     container_name: translator-server
     ports:
       - "8191:8191"
@@ -11,6 +11,14 @@ services:
       APP_HOST: 0.0.0.0
       APP_PORT: 8191
       DEFAULT_TARGET_LANG: zh
+      TRANSLATION_DEVICE: auto
       BASIC_AUTH_USERNAME: admin
       BASIC_AUTH_PASSWORD: Admin@123
     restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [ gpu ]
+              device_ids: [ "3" ]
