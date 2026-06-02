@@ -4,6 +4,28 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from translator_server.exceptions import ConfigurationError
+
+
+def _get_bool_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ConfigurationError(f"Invalid boolean value for {name}: {value}")
+
+
+def _get_optional_env(name: str) -> str | None:
+    value = os.getenv(name)
+    if value is None:
+        return None
+    return value.strip() or None
+
 
 @dataclass(slots=True)
 class Settings:
@@ -21,13 +43,17 @@ class Settings:
     max_new_tokens: int
     device: str | None
     num_beams: int
+    use_m2m100: bool
+    openai_api_key: str | None
+    openai_base_url: str | None
+    openai_model: str | None
     basic_auth_username: str
     basic_auth_password: str
 
     @classmethod
     def load(cls) -> "Settings":
         root_dir = Path(__file__).resolve().parents[2]
-        return cls(
+        settings = cls(
             app_name=os.getenv("APP_NAME", "translator-server"),
             app_env=os.getenv("APP_ENV", "dev"),
             host=os.getenv("APP_HOST", "0.0.0.0"),
@@ -44,6 +70,20 @@ class Settings:
             max_new_tokens=int(os.getenv("MAX_NEW_TOKENS", "512")),
             device=os.getenv("TRANSLATION_DEVICE", "auto"),
             num_beams=int(os.getenv("NUM_BEAMS", "1")),
+            use_m2m100=_get_bool_env("M2M100", True),
+            openai_api_key=_get_optional_env("OPENAI_API_KEY"),
+            openai_base_url=_get_optional_env("OPENAI_BASE_URL"),
+            openai_model=_get_optional_env("OPENAI_MODEL"),
             basic_auth_username=os.getenv("BASIC_AUTH_USERNAME", "admin"),
             basic_auth_password=os.getenv("BASIC_AUTH_PASSWORD", "Admin@123"),
         )
+        settings.validate()
+        return settings
+
+    def validate(self) -> None:
+        if self.use_m2m100:
+            return
+        if not self.openai_api_key:
+            raise ConfigurationError("OPENAI_API_KEY is required when M2M100=false")
+        if not self.openai_model:
+            raise ConfigurationError("OPENAI_MODEL is required when M2M100=false")

@@ -1,8 +1,5 @@
 services:
   translator-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: translator-server-cuda:latest
     container_name: translator-server
     ports:
@@ -11,14 +8,25 @@ services:
       APP_HOST: 0.0.0.0
       APP_PORT: 8191
       DEFAULT_TARGET_LANG: zh
-      TRANSLATION_DEVICE: auto
+      TRANSLATION_DEVICE: cuda:3
       BASIC_AUTH_USERNAME: admin
       BASIC_AUTH_PASSWORD: Admin@123
+      TRANSLATION_MODEL_PATH: /data/model/models/m2m100_1.2B
+      LID_MODEL_PATH: /data/model/models/lid.176.bin
+      # 打开以下注释切换 大模型翻译
+      # M2M100: false
+      # OPENAI_API_KEY:
+      # OPENAI_BASE_URL: http://10.11.203.232:3030/v1
+      # OPENAI_MODEL: Qwen3.6-27B
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - xxx:/data/model/models/m2m100_1.2B
+      - xxx:/data/model/models/lid.176.bin
     restart: always
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              capabilities: [ gpu ]
-              device_ids: [ "3" ]
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              capabilities: [ gpu ]
+#              device_ids: [ "3" ]

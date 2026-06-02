@@ -24,7 +24,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
-        description="Single translation API service powered by fastText and M2M100.",
+        description="Single translation API service powered by M2M100 or an OpenAI-compatible API.",
         lifespan=lifespan,
     )
     auth_dependency = build_basic_auth_dependency(settings)

@@ -1,6 +1,6 @@
 # translator-server
 
-一个基于 FastAPI 的本地翻译服务，使用 `fastText` 进行语种识别，使用本地 `M2M100` 模型完成文本翻译。
+一个基于 FastAPI 的翻译服务。默认使用 `fastText` 进行语种识别，并使用本地 `M2M100` 模型完成文本翻译；也可以切换到 OpenAI 兼容接口。
 
 适合下面这类场景：
 
@@ -11,7 +11,7 @@
 ## Highlights
 
 - Auto-detect 源语言，也支持手动指定 `source_lang`
-- 本地模型推理，无需运行时下载模型
+- 默认使用本地模型推理，也可以通过环境变量切换到 OpenAI 兼容接口
 - 基于 `uv` 管理 Python 环境与依赖
 - 内置 Basic Auth
 - 支持 Docker 构建和离线分发
@@ -138,6 +138,10 @@ curl -u admin:Admin@123 \
 | `MAX_NEW_TOKENS` | `512` | 最大新增 token 数 |
 | `TRANSLATION_DEVICE` | `auto` | 推理设备，`auto` 会优先使用可用 CUDA，否则回退 CPU；也可显式设置为 `cpu` 或 `cuda` |
 | `NUM_BEAMS` | `1` | Beam search 参数 |
+| `M2M100` | `true` | 是否使用本地 fastText + M2M100；设置为 `false` 时使用 OpenAI 兼容接口 |
+| `OPENAI_API_KEY` | - | OpenAI API Key，仅在 `M2M100=false` 时必填 |
+| `OPENAI_BASE_URL` | 官方默认地址 | 可选的 OpenAI 兼容接口地址，仅在 `M2M100=false` 时使用 |
+| `OPENAI_MODEL` | - | OpenAI 模型名称，仅在 `M2M100=false` 时必填 |
 | `BASIC_AUTH_USERNAME` | `admin` | Basic Auth 用户名 |
 | `BASIC_AUTH_PASSWORD` | `Admin@123` | Basic Auth 密码 |
 
@@ -148,6 +152,18 @@ APP_ENV=prod
 BASIC_AUTH_USERNAME=your-user
 BASIC_AUTH_PASSWORD=your-password
 ```
+
+如需使用 OpenAI 兼容接口：
+
+```bash
+M2M100=false
+OPENAI_API_KEY=your-api-key
+OPENAI_MODEL=your-model
+# 可选：使用兼容服务时配置
+OPENAI_BASE_URL=https://example.com/v1
+```
+
+`M2M100=true` 时不会初始化 OpenAI 客户端，也不要求配置任何 `OPENAI_*` 环境变量。
 
 ## API
 

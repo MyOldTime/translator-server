@@ -62,7 +62,7 @@ COPY src ./src
 COPY requirements.cpu.txt requirements.cuda.txt ./
 
 # 拷贝本地模型目录，容器启动后直接可用
-COPY models ./models
+#COPY models ./models
 
 EXPOSE 8191
 
