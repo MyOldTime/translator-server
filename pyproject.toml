@@ -33,3 +33,4 @@ packages = ["src/translator_server"]
 
 [tool.uv]
 package = true
+index-url = "https://mirrors.aliyun.com/pypi/simple"
