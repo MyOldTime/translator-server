@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass
 from typing import cast
@@ -9,6 +10,9 @@ from translator_server.exceptions import UnsupportedLanguageError
 from translator_server.services.language_detector import LanguageDetector
 from translator_server.services.m2m_translator import M2MTranslator
 from translator_server.services.openai_translator import OpenAITranslator
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -26,8 +30,18 @@ class TranslationService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.detector: LanguageDetector | None = None
+        logger.info("初始化翻译服务：use_m2m100=%s", settings.use_m2m100)
         if settings.use_m2m100:
+            logger.info("开始加载本地语种识别模型：path=%s", settings.lid_model_path)
             self.detector = LanguageDetector(settings.lid_model_path)
+            logger.info("本地语种识别模型加载完成")
+            logger.info(
+                "开始加载本地翻译模型：path=%s device=%s max_batch_size=%s segment_max_chars=%s",
+                settings.translation_model_path,
+                settings.device,
+                settings.max_batch_size,
+                settings.segment_max_chars,
+            )
             self.translator = M2MTranslator(
                 model_path=settings.translation_model_path,
                 device=settings.device,
@@ -37,15 +51,31 @@ class TranslationService:
                 segment_max_chars=settings.segment_max_chars,
                 num_beams=settings.num_beams,
             )
+            logger.info(
+                "本地翻译模型加载完成：model_name=%s device=%s",
+                self.translator.model_name,
+                self.translator.device,
+            )
         else:
+            logger.info(
+                "初始化 OpenAI 兼容翻译器：base_url=%s model=%s",
+                settings.openai_base_url,
+                settings.openai_model,
+            )
             self.translator = OpenAITranslator(
                 api_key=settings.openai_api_key or "",
                 base_url=settings.openai_base_url,
                 model=settings.openai_model or "",
             )
+            logger.info("OpenAI 兼容翻译器初始化完成：model=%s", self.translator.model_name)
 
     def translate(self, text: str, source_lang: str | None, target_lang: str | None) -> TranslationResult:
         if len(text) > self.settings.max_input_chars:
+            logger.warning(
+                "翻译输入过长：text_length=%s max_input_chars=%s",
+                len(text),
+                self.settings.max_input_chars,
+            )
             raise ValueError(
                 f"Input text too long: {len(text)} characters, limit is {self.settings.max_input_chars}"
             )
@@ -99,6 +129,7 @@ class TranslationService:
         effective_target = translator.normalize_lang(target_lang or self.settings.target_lang)
         translation = translator.translate(text, effective_source, effective_target)
         detected_source = effective_source or translation.detected_source_lang
+        took_ms = int((time.perf_counter() - start) * 1000)
 
         return TranslationResult(
             translated_text=translation.translated_text,
@@ -107,5 +138,5 @@ class TranslationService:
             target_lang=effective_target,
             model_name=translator.model_name,
             device=translator.device,
-            took_ms=int((time.perf_counter() - start) * 1000),
+            took_ms=took_ms,
         )

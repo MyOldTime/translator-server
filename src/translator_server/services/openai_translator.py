@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
-import os
+import logging
 from dataclasses import dataclass
 
 from openai import OpenAI
 
 from translator_server.exceptions import TranslationError
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -33,10 +36,15 @@ class OpenAITranslator:
 
     def translate(self, text: str, source_lang: str | None, target_lang: str) -> OpenAITranslation:
         source_instruction = (
-            f"The source language is explicitly specified as {source_lang}."
+            f"源语言已明确指定为 {source_lang}。"
             if source_lang
-            else "Detect the source language from the input text."
+            else "请根据输入文本检测源语言。"
         )
+
+        # if target_lang == 'zh':
+        # 直接写死翻译为简体简体中文
+        target_lang = 'zh(简体中文)'
+
         try:
             completion = self.client.chat.completions.create(
                 model=self.model_name,
@@ -44,17 +52,17 @@ class OpenAITranslator:
                     {
                         "role": "system",
                         "content": (
-                            "Translate the user's text accurately. Preserve meaning, formatting, and line breaks. "
-                            "Return the result only by calling return_translation. "
-                            "Use a concise lowercase language code for detected_source_lang."
+                            "请准确翻译用户文本，保留原意、格式和换行。"
+                            "只能通过调用 return_translation 返回结果。"
+                            "detected_source_lang 请使用简洁的小写语言代码。"
                         ),
                     },
                     {
                         "role": "user",
                         "content": (
                             f"{source_instruction}\n"
-                            f"Translate into language code: {target_lang}\n"
-                            "Text to translate:\n"
+                            f"请翻译为以下语言代码对应的语言：{target_lang}\n"
+                            "待翻译文本：\n"
                             f"{text}"
                         ),
                     },
@@ -64,18 +72,18 @@ class OpenAITranslator:
                         "type": "function",
                         "function": {
                             "name": "return_translation",
-                            "description": "Return the translated text and detected source language.",
+                            "description": "返回译文和检测到的源语言。",
                             "strict": True,
                             "parameters": {
                                 "type": "object",
                                 "properties": {
                                     "translated_text": {
                                         "type": "string",
-                                        "description": "The translated text.",
+                                        "description": "翻译后的文本。",
                                     },
                                     "detected_source_lang": {
                                         "type": "string",
-                                        "description": "The concise lowercase source language code.",
+                                        "description": "简洁的小写源语言代码。",
                                     },
                                 },
                                 "required": ["translated_text", "detected_source_lang"],
@@ -92,8 +100,9 @@ class OpenAITranslator:
                         "enable_thinking": False,
                     },
                 },
-            )
+        )
         except Exception as exc:
+            logger.exception("OpenAI 兼容接口请求失败：model=%s 错误=%s", self.model_name, exc)
             raise TranslationError(f"OpenAI translation request failed: {exc}") from exc
 
         try:
@@ -109,6 +118,7 @@ class OpenAITranslator:
             if not isinstance(detected_source_lang, str) or not detected_source_lang.strip():
                 raise ValueError("detected_source_lang must be a non-empty string")
         except (AttributeError, IndexError, KeyError, StopIteration, TypeError, ValueError, json.JSONDecodeError) as exc:
+            logger.exception("OpenAI 兼容接口响应解析失败：model=%s 错误=%s", self.model_name, exc)
             raise TranslationError(f"Invalid OpenAI translation response: {exc}") from exc
 
         return OpenAITranslation(

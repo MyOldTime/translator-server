@@ -122,28 +122,32 @@ curl -u admin:Admin@123 \
 
 ### Environment variables
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `APP_NAME` | `translator-server` | 应用名称 |
-| `APP_ENV` | `dev` | 运行环境 |
-| `APP_HOST` | `0.0.0.0` | 监听地址 |
-| `APP_PORT` | `8191` | 监听端口 |
+| Variable | Default              | Description |
+| --- |----------------------| --- |
+| `APP_NAME` | `translator-server`  | 应用名称 |
+| `APP_ENV` | `dev`                | 运行环境 |
+| `LOG_LEVEL` | `INFO`               | 控制台日志级别，可选 `DEBUG`、`INFO`、`WARNING`、`ERROR`、`CRITICAL` |
+| `APP_HOST` | `0.0.0.0`            | 监听地址 |
+| `APP_PORT` | `8191`               | 监听端口 |
 | `LID_MODEL_PATH` | `models/lid.176.bin` | fastText 语种识别模型路径 |
 | `TRANSLATION_MODEL_PATH` | `models/m2m100_418M` | 翻译模型目录 |
-| `DEFAULT_TARGET_LANG` | `zh` | 默认目标语言 |
-| `MAX_BATCH_SIZE` | `8` | 批处理大小 |
-| `MAX_INPUT_CHARS` | `20000` | 单次请求最大字符数 |
-| `SEGMENT_MAX_CHARS` | `400` | 单段最大字符数 |
-| `MAX_LENGTH` | `512` | 生成最大长度 |
-| `MAX_NEW_TOKENS` | `512` | 最大新增 token 数 |
-| `TRANSLATION_DEVICE` | `auto` | 推理设备，`auto` 会优先使用可用 CUDA，否则回退 CPU；也可显式设置为 `cpu` 或 `cuda` |
-| `NUM_BEAMS` | `1` | Beam search 参数 |
-| `M2M100` | `true` | 是否使用本地 fastText + M2M100；设置为 `false` 时使用 OpenAI 兼容接口 |
-| `OPENAI_API_KEY` | - | OpenAI API Key，仅在 `M2M100=false` 时必填 |
-| `OPENAI_BASE_URL` | 官方默认地址 | 可选的 OpenAI 兼容接口地址，仅在 `M2M100=false` 时使用 |
-| `OPENAI_MODEL` | - | OpenAI 模型名称，仅在 `M2M100=false` 时必填 |
-| `BASIC_AUTH_USERNAME` | `admin` | Basic Auth 用户名 |
-| `BASIC_AUTH_PASSWORD` | `Admin@123` | Basic Auth 密码 |
+| `DEFAULT_TARGET_LANG` | `zh`                 | 默认目标语言 |
+| `MAX_BATCH_SIZE` | `8`                  | 批处理大小 |
+| `MAX_INPUT_CHARS` | `20000`              | 单次请求最大字符数 |
+| `SEGMENT_MAX_CHARS` | `400`                | 单段最大字符数 |
+| `MAX_LENGTH` | `512`                | 生成最大长度 |
+| `MAX_NEW_TOKENS` | `512`                | 最大新增 token 数 |
+| `TRANSLATION_DEVICE` | `auto`               | 推理设备，`auto` 会优先使用可用 CUDA，否则回退 CPU；也可显式设置为 `cpu` 或 `cuda` |
+| `NUM_BEAMS` | `1`                  | Beam search 参数 |
+| `M2M100` | `true`               | 是否使用本地 fastText + M2M100；设置为 `false` 时使用 OpenAI 兼容接口 |
+| `OPENAI_API_KEY` | -                    | OpenAI API Key，仅在 `M2M100=false` 时必填 |
+| `OPENAI_BASE_URL` | 官方默认地址               | 可选的 OpenAI 兼容接口地址，仅在 `M2M100=false` 时使用 |
+| `OPENAI_MODEL` | -                    | OpenAI 模型名称，仅在 `M2M100=false` 时必填 |
+| `BASIC_AUTH_USERNAME` | `admin`              | Basic Auth 用户名 |
+| `BASIC_AUTH_PASSWORD` | `Admin@123`          | Basic Auth 密码 |
+| `TRANSLATE_MAX_CONCURRENCY` | `5`                  | 翻译接口最大并发执行数 |
+| `TRANSLATE_QUEUE_SIZE` | `20`                 | 翻译接口最大等待队列长度 |
+| `TRANSLATE_QUEUE_TIMEOUT_SECONDS` | `30`                 | 翻译请求最长排队等待秒数，超时返回 `429` |
 
 生产环境建议至少覆盖以下变量：
 

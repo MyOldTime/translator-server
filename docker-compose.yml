@@ -14,10 +14,16 @@ services:
       TRANSLATION_MODEL_PATH: /data/model/models/m2m100_1.2B
       LID_MODEL_PATH: /data/model/models/lid.176.bin
       # 打开以下注释切换 大模型翻译
-      # M2M100: false
-      # OPENAI_API_KEY:
-      # OPENAI_BASE_URL: http://10.11.203.232:3030/v1
-      # OPENAI_MODEL: Qwen3.6-27B
+      M2M100: false
+      OPENAI_API_KEY:
+      OPENAI_BASE_URL: http://10.11.203.232:3030/v1
+      OPENAI_MODEL: Qwen3.6-27B
+      # 翻译最多并发数，超过进入队列等待, int
+      TRANSLATE_MAX_CONCURRENCY: 5
+      # 等待有界队列大小, int
+      TRANSLATE_QUEUE_SIZE: 20
+      # 在队列中等待时长, float
+      TRANSLATE_QUEUE_TIMEOUT_SECONDS: 30
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - xxx:/data/model/models/m2m100_1.2B

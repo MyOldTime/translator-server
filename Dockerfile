@@ -66,5 +66,5 @@ COPY requirements.cpu.txt requirements.cuda.txt ./
 
 EXPOSE 8191
 
-# 容器启动命令：直接使用虚拟环境中的 Python 启动 uvicorn
-CMD ["/app/.venv/bin/python", "-m", "uvicorn", "translator_server.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8191"]
+# 容器启动命令：通过项目入口启动，统一接管控制台日志配置
+CMD ["/app/.venv/bin/python", "-m", "translator_server.main"]
